@@ -19,7 +19,7 @@
       .container {
         width: 90%;
         max-width: 600px;
-        padding: 30px 20px; /* Increased top padding */
+        padding: 30px 20px;
         background-color: #ffffff;
         box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
         border-radius: 8px;
@@ -66,13 +66,13 @@
       #filterDropdown {
         display: none;
         position: absolute;
-        top: 50px; 
+        top: 50px;
         right: 20px;
         background-color: white;
         border: 1px solid #ddd;
         border-radius: 5px;
         padding: 10px;
-        width: 200px; /* Increased width */
+        width: 200px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         z-index: 1;
       }
@@ -191,7 +191,7 @@
           <option value="all">Semua Kategori Waktu</option>
           <option value="morning">Pagi (00:00 - 12:00)</option>
           <option value="afternoon">Sore (12:00 - 18:00)</option>
-          <option value="evening">Malam (18:00 - 00:00)</option>
+          <option value="night">Malam (18:00 - 00:00)</option>
         </select>
         <select id="filterType" onchange="filterTodos()">
           <option value="all">Semua Jenis Kegiatan</option>
@@ -259,43 +259,88 @@
         const time = document.getElementById("time").value;
         const type = document.getElementById("type").value;
 
-        if (
-          title.trim() !== "" &&
-          startDate &&
-          endDate &&
-          startTime &&
-          endTime
-        ) {
-          const todo = {
-            title,
-            description,
-            startDate,
-            endDate,
-            startTime,
-            endTime,
-            priority,
-            time,
-            type,
-            completed: false,
-          };
-
-          if (editIndex === null) {
-            todos.push(todo);
-          } else {
-            todos[editIndex] = todo;
-            editIndex = null;
-          }
-
-          localStorage.setItem("todos", JSON.stringify(todos));
-          resetFilterAndDisplay();
-          resetForm();
+        if (editIndex === null) {
+          todos.push({ title, description, startDate, endDate, startTime, endTime, priority, time, type, done: false });
+        } else {
+          todos[editIndex] = { title, description, startDate, endDate, startTime, endTime, priority, time, type, done: false };
+          editIndex = null;
         }
+
+        saveAndDisplay();
+        document.getElementById("todoForm").reset();
+      }
+
+      function saveAndDisplay() {
+        localStorage.setItem("todos", JSON.stringify(todos));
+        displayTodos();
+      }
+
+      function displayTodos() {
+        const todoList = document.getElementById("todoList");
+        todoList.innerHTML = "";
+        todos.forEach((todo, index) => {
+          const todoItem = document.createElement("div");
+          todoItem.className = `todo-item ${todo.done ? "done" : ""}`;
+          todoItem.innerHTML = `
+            <div class="todo-item-content">
+              <h3>${todo.title}</h3>
+              <p>${todo.description}</p>
+              <p>Mulai: ${todo.startDate} ${todo.startTime} - Selesai: ${todo.endDate} ${todo.endTime}</p>
+              <p>Prioritas: ${todo.priority} | Waktu: ${todo.time} | Jenis: ${todo.type}</p>
+            </div>
+            <div class="action-buttons">
+              <input type="checkbox" class="checkbox" onclick="toggleDone(${index})" ${todo.done ? "checked" : ""} />
+              <button class="edit-btn" onclick="editTodo(${index})">Edit</button>
+              <button class="delete-btn" onclick="deleteTodo(${index})">Hapus</button>
+            </div>
+          `;
+          todoList.appendChild(todoItem);
+        });
+      }
+
+      function filterTodos() {
+        const filterPriority = document.getElementById("filterPriority").value;
+        const filterTime = document.getElementById("filterTime").value;
+        const filterType = document.getElementById("filterType").value;
+        const todoList = document.getElementById("todoList");
+
+        todoList.innerHTML = "";
+        todos
+          .filter(todo => {
+            return (
+              (filterPriority === "all" || todo.priority === filterPriority) &&
+              (filterTime === "all" || todo.time === filterTime) &&
+              (filterType === "all" || todo.type === filterType)
+            );
+          })
+          .forEach((todo, index) => {
+            const todoItem = document.createElement("div");
+            todoItem.className = `todo-item ${todo.done ? "done" : ""}`;
+            todoItem.innerHTML = `
+              <div class="todo-item-content">
+                <h3>${todo.title}</h3>
+                <p>${todo.description}</p>
+                <p>Mulai: ${todo.startDate} ${todo.startTime} - Selesai: ${todo.endDate} ${todo.endTime}</p>
+                <p>Prioritas: ${todo.priority} | Waktu: ${todo.time} | Jenis: ${todo.type}</p>
+              </div>
+              <div class="action-buttons">
+                <input type="checkbox" class="checkbox" onclick="toggleDone(${index})" ${todo.done ? "checked" : ""} />
+                <button class="edit-btn" onclick="editTodo(${index})">Edit</button>
+                <button class="delete-btn" onclick="deleteTodo(${index})">Hapus</button>
+              </div>
+            `;
+            todoList.appendChild(todoItem);
+          });
+      }
+
+      function toggleDone(index) {
+        todos[index].done = !todos[index].done;
+        saveAndDisplay();
       }
 
       function editTodo(index) {
         editIndex = index;
         const todo = todos[index];
-
         document.getElementById("title").value = todo.title;
         document.getElementById("description").value = todo.description;
         document.getElementById("startDate").value = todo.startDate;
@@ -307,90 +352,9 @@
         document.getElementById("type").value = todo.type;
       }
 
-      function resetForm() {
-        document.getElementById("title").value = "";
-        document.getElementById("description").value = "";
-        document.getElementById("startDate").value = "";
-        document.getElementById("endDate").value = "";
-        document.getElementById("startTime").value = "";
-        document.getElementById("endTime").value = "";
-        document.getElementById("priority").value = "low";
-        document.getElementById("time").value = "morning";
-        document.getElementById("type").value = "individual";
-        editIndex = null;
-      }
-
-      function displayTodos(
-        filterPriority = "all",
-        filterTime = "all",
-        filterType = "all"
-      ) {
-        const todoList = document.getElementById("todoList");
-        todoList.innerHTML = "";
-        todos.forEach((todo, index) => {
-          if (
-            (filterPriority === "all" || todo.priority === filterPriority) &&
-            (filterTime === "all" || todo.time === filterTime) &&
-            (filterType === "all" || todo.type === filterType)
-          ) {
-            const todoItem = document.createElement("div");
-            todoItem.classList.add("todo-item");
-            if (todo.completed) todoItem.classList.add("done");
-
-            todoItem.innerHTML = `
-                        <div class="todo-item-content">
-                            <h3>${todo.title} (${capitalizeFirstLetter(
-              todo.priority
-            )})</h3>
-                            <p>${todo.description}</p>
-                            <p>Mulai: ${todo.startDate} ${
-              todo.startTime
-            } | Selesai: ${todo.endDate} ${todo.endTime}</p>
-                            <p>Jenis: ${capitalizeFirstLetter(
-                              todo.type
-                            )}, Waktu: ${capitalizeFirstLetter(todo.time)}</p>
-                        </div>
-                        <div class="action-buttons">
-                            <button class="edit-btn" onclick="editTodo(${index})">Edit</button>
-                            <button class="delete-btn" onclick="deleteTodoWithoutRefresh(${index})">Hapus</button>
-                            <input type="checkbox" class="checkbox" onclick="toggleComplete(${index})" ${
-              todo.completed ? "checked" : ""
-            }>
-                        </div>
-                    `;
-            todoList.appendChild(todoItem);
-          }
-        });
-      }
-
-      function toggleComplete(index) {
-        todos[index].completed = !todos[index].completed;
-        localStorage.setItem("todos", JSON.stringify(todos));
-        displayTodos(); 
-      }
-
-      function deleteTodoWithoutRefresh(index) {
+      function deleteTodo(index) {
         todos.splice(index, 1);
-        localStorage.setItem("todos", JSON.stringify(todos));
-        displayTodos(); 
-      }
-
-      function filterTodos() {
-        const filterPriority = document.getElementById("filterPriority").value;
-        const filterTime = document.getElementById("filterTime").value;
-        const filterType = document.getElementById("filterType").value;
-        displayTodos(filterPriority, filterTime, filterType);
-      }
-
-      function resetFilterAndDisplay() {
-        document.getElementById("filterPriority").value = "all";
-        document.getElementById("filterTime").value = "all";
-        document.getElementById("filterType").value = "all";
-        displayTodos(); 
-      }
-
-      function capitalizeFirstLetter(string) {
-        return string.charAt(0).toUpperCase() + string.slice(1);
+        saveAndDisplay();
       }
     </script>
   </body>
