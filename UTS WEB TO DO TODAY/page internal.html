@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>To-Do Today</title>
+    <style>
+      /* CSS Styling */
+      body,
+      html {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        background: linear-gradient(135deg, #a4508b, #5f0a87);
+      }
+      .container {
+        width: 90%;
+        max-width: 600px;
+        padding: 30px 20px; /* Increased top padding */
+        background-color: #ffffff;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        position: relative;
+        overflow: hidden;
+        justify-content: center;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        margin-bottom: 20px;
+      }
+      h1 {
+        color: #333333;
+        font-size: 35px;
+        margin: 0;
+        text-align: center;
+        flex: 1;
+        white-space: nowrap;
+        max-width: max-content;
+        left: 120px;
+        position: relative;
+      }
+      .social-icons {
+        display: flex;
+        gap: 10px;
+        flex: 0 0 auto; 
+      }
+      .social-icons a {
+        color: #333;
+        font-size: 20px;
+        text-decoration: none;
+      }
+      #filterButton {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 30px; 
+        color: #333;
+        flex: 0 0 auto; 
+      }
+      #filterDropdown {
+        display: none;
+        position: absolute;
+        top: 50px; 
+        right: 20px;
+        background-color: white;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 10px;
+        width: 200px; /* Increased width */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        z-index: 1;
+      }
+      #filterDropdown select {
+        width: 100%;
+        padding: 8px;
+        font-size: 14px;
+        margin-top: 5px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+      }
+      .todo-item {
+        background: linear-gradient(135deg, #f3e8ff, #e0c3fc);
+        padding: 10px;
+        border-radius: 8px;
+        margin-top: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .todo-item.done {
+        opacity: 0.5;
+        color: #999;
+      }
+      .todo-item-content {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        margin-right: 10px;
+      }
+      form,
+      button,
+      input,
+      textarea,
+      select {
+        width: calc(100% - 20px);
+        margin-top: 10px;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        color: #333;
+      }
+      .action-buttons {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex-direction: column;
+      }
+      .checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+      }
+      .edit-btn,
+      .delete-btn {
+        background-color: #ff4d4d;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 12px;
+        width: 100%;
+      }
+      .edit-btn {
+        background-color: #ffc107;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        border: none;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      .form-category {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        width: 100%;
+      }
+      .form-category select {
+        width: 30%;
+        padding: 8px;
+        font-size: 14px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header with Social Icons, Title, and Filter Button -->
+      <div class="header">
+        <div class="social-icons">
+          <a href="https://www.instagram.com" target="_blank">📷</a>
+          <a href="https://www.facebook.com" target="_blank">📘</a>
+        </div>
+        <h1>To-Do Today</h1>
+        <button id="filterButton" onclick="toggleFilter()">☰</button>
+      </div>
+
+      <!-- Filter Dropdown -->
+      <div id="filterDropdown">
+        <select id="filterPriority" onchange="filterTodos()">
+          <option value="all">Semua Prioritas</option>
+          <option value="low">Rendah</option>
+          <option value="medium">Sedang</option>
+          <option value="high">Tinggi</option>
+        </select>
+        <select id="filterTime" onchange="filterTodos()">
+          <option value="all">Semua Kategori Waktu</option>
+          <option value="morning">Pagi (00:00 - 12:00)</option>
+          <option value="afternoon">Sore (12:00 - 18:00)</option>
+          <option value="evening">Malam (18:00 - 00:00)</option>
+        </select>
+        <select id="filterType" onchange="filterTodos()">
+          <option value="all">Semua Jenis Kegiatan</option>
+          <option value="individual">Individu</option>
+          <option value="group">Grup</option>
+        </select>
+      </div>
+
+      <!-- Formulir Tambah/Perbarui To-Do -->
+      <form id="todoForm">
+        <input type="text" id="title" placeholder="Judul To-Do" required />
+        <textarea id="description" placeholder="Deskripsi"></textarea>
+        <input type="date" id="startDate" required />
+        <input type="date" id="endDate" required />
+        <input type="time" id="startTime" required />
+        <input type="time" id="endTime" required />
+
+        <!-- Kategori (Prioritas, Waktu, Jenis) -->
+        <div class="form-category">
+          <select id="priority">
+            <option value="low">Prioritas Rendah</option>
+            <option value="medium">Prioritas Sedang</option>
+            <option value="high">Prioritas Tinggi</option>
+          </select>
+          <select id="time">
+            <option value="morning">Pagi</option>
+            <option value="afternoon">Sore</option>
+            <option value="night">Malam</option>
+          </select>
+          <select id="type">
+            <option value="individual">Individu</option>
+            <option value="group">Grup</option>
+          </select>
+        </div>
+
+        <button type="button" onclick="addTodo()">Tambah/Perbarui</button>
+      </form>
+
+      <!-- Daftar To-Do -->
+      <div id="todoList"></div>
+    </div>
+
+    <script>
+      let todos = JSON.parse(localStorage.getItem("todos")) || [];
+      let editIndex = null;
+
+      window.onload = function () {
+        displayTodos(); 
+      };
+
+      function toggleFilter() {
+        const filterDropdown = document.getElementById("filterDropdown");
+        filterDropdown.style.display =
+          filterDropdown.style.display === "block" ? "none" : "block";
+      }
+
+      function addTodo() {
+        const title = document.getElementById("title").value;
+        const description = document.getElementById("description").value;
+        const startDate = document.getElementById("startDate").value;
+        const endDate = document.getElementById("endDate").value;
+        const startTime = document.getElementById("startTime").value;
+        const endTime = document.getElementById("endTime").value;
+        const priority = document.getElementById("priority").value;
+        const time = document.getElementById("time").value;
+        const type = document.getElementById("type").value;
+
+        if (
+          title.trim() !== "" &&
+          startDate &&
+          endDate &&
+          startTime &&
+          endTime
+        ) {
+          const todo = {
+            title,
+            description,
+            startDate,
+            endDate,
+            startTime,
+            endTime,
+            priority,
+            time,
+            type,
+            completed: false,
+          };
+
+          if (editIndex === null) {
+            todos.push(todo);
+          } else {
+            todos[editIndex] = todo;
+            editIndex = null;
+          }
+
+          localStorage.setItem("todos", JSON.stringify(todos));
+          resetFilterAndDisplay();
+          resetForm();
+        }
+      }
+
+      function editTodo(index) {
+        editIndex = index;
+        const todo = todos[index];
+
+        document.getElementById("title").value = todo.title;
+        document.getElementById("description").value = todo.description;
+        document.getElementById("startDate").value = todo.startDate;
+        document.getElementById("endDate").value = todo.endDate;
+        document.getElementById("startTime").value = todo.startTime;
+        document.getElementById("endTime").value = todo.endTime;
+        document.getElementById("priority").value = todo.priority;
+        document.getElementById("time").value = todo.time;
+        document.getElementById("type").value = todo.type;
+      }
+
+      function resetForm() {
+        document.getElementById("title").value = "";
+        document.getElementById("description").value = "";
+        document.getElementById("startDate").value = "";
+        document.getElementById("endDate").value = "";
+        document.getElementById("startTime").value = "";
+        document.getElementById("endTime").value = "";
+        document.getElementById("priority").value = "low";
+        document.getElementById("time").value = "morning";
+        document.getElementById("type").value = "individual";
+        editIndex = null;
+      }
+
+      function displayTodos(
+        filterPriority = "all",
+        filterTime = "all",
+        filterType = "all"
+      ) {
+        const todoList = document.getElementById("todoList");
+        todoList.innerHTML = "";
+        todos.forEach((todo, index) => {
+          if (
+            (filterPriority === "all" || todo.priority === filterPriority) &&
+            (filterTime === "all" || todo.time === filterTime) &&
+            (filterType === "all" || todo.type === filterType)
+          ) {
+            const todoItem = document.createElement("div");
+            todoItem.classList.add("todo-item");
+            if (todo.completed) todoItem.classList.add("done");
+
+            todoItem.innerHTML = `
+                        <div class="todo-item-content">
+                            <h3>${todo.title} (${capitalizeFirstLetter(
+              todo.priority
+            )})</h3>
+                            <p>${todo.description}</p>
+                            <p>Mulai: ${todo.startDate} ${
+              todo.startTime
+            } | Selesai: ${todo.endDate} ${todo.endTime}</p>
+                            <p>Jenis: ${capitalizeFirstLetter(
+                              todo.type
+                            )}, Waktu: ${capitalizeFirstLetter(todo.time)}</p>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="edit-btn" onclick="editTodo(${index})">Edit</button>
+                            <button class="delete-btn" onclick="deleteTodoWithoutRefresh(${index})">Hapus</button>
+                            <input type="checkbox" class="checkbox" onclick="toggleComplete(${index})" ${
+              todo.completed ? "checked" : ""
+            }>
+                        </div>
+                    `;
+            todoList.appendChild(todoItem);
+          }
+        });
+      }
+
+      function toggleComplete(index) {
+        todos[index].completed = !todos[index].completed;
+        localStorage.setItem("todos", JSON.stringify(todos));
+        displayTodos(); 
+      }
+
+      function deleteTodoWithoutRefresh(index) {
+        todos.splice(index, 1);
+        localStorage.setItem("todos", JSON.stringify(todos));
+        displayTodos(); 
+      }
+
+      function filterTodos() {
+        const filterPriority = document.getElementById("filterPriority").value;
+        const filterTime = document.getElementById("filterTime").value;
+        const filterType = document.getElementById("filterType").value;
+        displayTodos(filterPriority, filterTime, filterType);
+      }
+
+      function resetFilterAndDisplay() {
+        document.getElementById("filterPriority").value = "all";
+        document.getElementById("filterTime").value = "all";
+        document.getElementById("filterType").value = "all";
+        displayTodos(); 
+      }
+
+      function capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+      }
+    </script>
+  </body>
+</html>
